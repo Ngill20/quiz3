@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="text-center">Query Results</h2>
+
+{% if elapsed_time %}
+<div class="alert alert-info text-center">
+    <strong>Query Execution Time:</strong> {{ elapsed_time }}
+</div>
+{% endif %}
+
+{% if cache_status %}
+<div class="alert alert-secondary text-center">
+    <strong>Status:</strong> {{ cache_status }}
+</div>
+{% endif %}
+
+<div class="table-responsive">
+    {{ tables|safe }}
+</div>
+
+<div class="text-center mt-4">
+  <a href="{{ url_for('query') }}" class="btn btn-secondary">Back to Earthquakes Query</a><br>
+  <a href="{{ url_for('query3') }}" class="btn btn-secondary">Back to Earthquakes by Location Query</a><br>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-primary">Home</a>
+</div>
+
+{% endblock %}

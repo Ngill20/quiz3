@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="text-center">
+    <a href="{{ url_for('insert') }}" class="btn btn-primary btn-lg mb-3">Insert New Earthquake</a><br>
+    <a href="{{ url_for('query') }}" class="btn btn-success btn-lg mb-3">Query Earthquakes</a><br>
+    <a href="{{ url_for('query3') }}" class="btn btn-dark btn-lg">Query Earthquakes by Location</a><br>
+    <a href="{{ url_for('upload') }}" class="btn btn-warning btn-lg">Upload CSV</a>
+</div>
+{% endblock %}

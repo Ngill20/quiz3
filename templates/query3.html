@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="text-center">Query Earthquakes by Location Radius</h2>
+
+<form method="POST" class="row g-3 mt-4">
+  <div class="col-md-4">
+    <label>Latitude</label>
+    <input type="number" step="any" name="latitude" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label>Longitude</label>
+    <input type="number" step="any" name="longitude" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label>Distance (km)</label>
+    <input type="number" step="any" name="distance_km" class="form-control" required>
+  </div>
+
+  <div class="col-12 text-center">
+    <button type="submit" class="btn btn-success mt-3">Query</button> <br> <br>
+    <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+  </div>
+</form>
+{% endblock %}

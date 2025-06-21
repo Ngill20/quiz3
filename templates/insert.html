@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="text-center">Insert New Earthquake Record</h2>
+
+<form method="POST" class="row g-3 mt-4">
+  <div class="col-md-6"><label>ID</label><input name="id" class="form-control" required></div>
+  <div class="col-md-6"><label>Time</label><input type="datetime-local" name="time" class="form-control"></div>
+
+  <div class="col-md-4"><label>Latitude</label><input type="number" step="any" name="latitude" class="form-control"></div>
+  <div class="col-md-4"><label>Longitude</label><input type="number" step="any" name="longitude" class="form-control"></div>
+  <div class="col-md-4"><label>Depth</label><input type="number" step="any" name="depth" class="form-control"></div>
+
+  <div class="col-md-4"><label>Magnitude</label><input type="number" step="any" name="mag" class="form-control"></div>
+  <div class="col-md-4"><label>Magnitude Type</label><input name="magType" class="form-control"></div>
+  <div class="col-md-4"><label>NST</label><input type="number" name="nst" class="form-control"></div>
+
+  <div class="col-md-4"><label>Gap</label><input type="number" step="any" name="gap" class="form-control"></div>
+  <div class="col-md-4"><label>DMin</label><input type="number" step="any" name="dmin" class="form-control"></div>
+  <div class="col-md-4"><label>RMS</label><input type="number" step="any" name="rms" class="form-control"></div>
+
+  <div class="col-md-6"><label>Net</label><input name="net" class="form-control"></div>
+  <div class="col-md-6"><label>Updated</label><input type="datetime-local" name="updated" class="form-control"></div>
+
+  <div class="col-md-12"><label>Place</label><input name="place" class="form-control"></div>
+  <div class="col-md-6"><label>Type</label><input name="type" class="form-control"></div>
+
+  <div class="col-md-4"><label>Horizontal Error</label><input type="number" step="any" name="horizontalError" class="form-control"></div>
+  <div class="col-md-4"><label>Depth Error</label><input type="number" step="any" name="depthError" class="form-control"></div>
+  <div class="col-md-4"><label>Magnitude Error</label><input type="number" step="any" name="magError" class="form-control"></div>
+
+  <div class="col-md-6"><label>Mag NST</label><input type="number" name="magNst" class="form-control"></div>
+  <div class="col-md-6"><label>Status</label><input name="status" class="form-control"></div>
+
+  <div class="col-md-6"><label>Location Source</label><input name="locationSource" class="form-control"></div>
+  <div class="col-md-6"><label>Magnitude Source</label><input name="magSource" class="form-control"></div>
+
+  <div class="col-12 text-center">
+    <button type="submit" class="btn btn-primary mt-3">Insert</button>
+    <a href="/" class="btn btn-secondary mt-3">Cancel</a>
+  </div>
+</form>
+{% endblock %}

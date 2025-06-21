@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Upload Cleaned Earthquake CSV</h2>
+<form method="post" enctype="multipart/form-data" class="mb-3">
+    <div class="mb-3">
+        <label for="file" class="form-label">Select CSV File</label>
+        <input type="file" name="file" id="file" class="form-control" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn btn-success">Upload and Insert</button>
+    <a href="/" class="btn btn-secondary">Back to Home</a>
+</form>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="mt-3">
+            {% for message in messages %}
+                <div class="alert alert-info">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+{% endblock %}
