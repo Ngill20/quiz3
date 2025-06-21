@@ -15,7 +15,7 @@ app.secret_key = 'supersecret'  # for flash messages
 
 load_dotenv()
 password = os.getenv('SQL_PASSWORD')
-
+#Add this
 
 server = 'quiz3server.database.windows.net'
 database = 'quiz3db' 
