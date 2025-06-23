@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="text-center">Query 4 Results (T = {{ t }})</h2>
+
+<h3>Query 2 Execution Times</h3>
+<ul>
+  {% for time in q2_times %}
+    <li>{{ time | round(4) }} seconds</li>
+  {% endfor %}
+</ul>
+<p><strong>Total Time for Query2:</strong> {{ q2_total | round(4) }} seconds</p>
+
+<h3>Query 3 Execution Times</h3>
+<ul>
+  {% for time in q3_times %}
+    <li>{{ time | round(4) }} seconds</li>
+  {% endfor %}
+</ul>
+<p><strong>Total Time for Query3:</strong> {{ q3_total | round(4) }} seconds</p>
+
+<hr>
+
+<h3>Last Query2 Result Table</h3>
+<div class="table-responsive">
+    {{ q2_table | safe }}
+</div>
+
+<h3>Last Query3 Result Table</h3>
+<div class="table-responsive">
+    {{ q3_table | safe }}
+</div>
+
+<div class="text-center mt-4">
+  <a href="{{ url_for('query4') }}" class="btn btn-secondary">Back to Query 4</a><br>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-primary">Home</a>
+</div>
+{% endblock %}

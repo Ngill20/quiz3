@@ -2,8 +2,19 @@
 {% block content %}
 <div class="text-center">
     <a href="{{ url_for('insert') }}" class="btn btn-primary btn-lg mb-3">Insert New Earthquake</a><br>
+
     <a href="{{ url_for('query') }}" class="btn btn-success btn-lg mb-3">Query Earthquakes</a><br>
-    <a href="{{ url_for('query3') }}" class="btn btn-dark btn-lg">Query Earthquakes by Location</a><br>
+
+    <a href="{{ url_for('query2') }}" class="btn btn-info btn-lg mb-3">Query Earthquakes by Time Range</a><br>
+
+    <a href="{{ url_for('query3') }}" class="btn btn-dark btn-lg mb-3">Query Earthquakes by Net + Time</a><br>
+
+    <a href="{{ url_for('query4') }}" class="btn btn-secondary btn-lg mb-3">Query Earthquakes Multiple Times: No Cache</a><br>
+
+    <a href="{{ url_for('query5') }}" class="btn btn-secondary btn-lg mb-3">Query Earthquakes Multiple Times w/ Cache</a><br>
+
+    <a href="{{ url_for('query6') }}" class="btn btn-info btn-lg mb-3">Update Record by Time</a><br>
+
     <a href="{{ url_for('upload') }}" class="btn btn-warning btn-lg">Upload CSV</a>
 </div>
 {% endblock %}

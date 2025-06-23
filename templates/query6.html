@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="text-center">Query6: Update Record by Time</h2>
+
+<form method="POST" class="text-center">
+    <label for="old_time"><strong>Existing Time (to locate the row):</strong></label><br>
+    <input type="text" name="old_time" required><br><br>
+
+    <p><strong>New values (leave blank to skip a field):</strong></p>
+
+    <label for="new_time">New Time:</label><br>
+    <input type="text" name="new_time"><br><br>
+
+    <label for="lat">Latitude:</label><br>
+    <input type="text" name="lat"><br><br>
+
+    <label for="long">Longitude:</label><br>
+    <input type="text" name="long"><br><br>
+
+    <label for="mag">Magnitude:</label><br>
+    <input type="text" name="mag"><br><br>
+
+    <label for="nst">NST:</label><br>
+    <input type="text" name="nst"><br><br>
+
+    <label for="net">Net:</label><br>
+    <input type="text" name="net"><br><br>
+
+    <label for="id">ID:</label><br>
+    <input type="text" name="id"><br><br>
+
+    <input type="submit" value="Update Record" class="btn btn-primary">
+</form>
+
+{% if updated_table %}
+<hr>
+<h3 class="text-center">Updated Record</h3>
+<div class="table-responsive">
+    {{ updated_table | safe }}
+</div>
+{% endif %}
+{% endblock %}

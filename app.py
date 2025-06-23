@@ -53,49 +53,36 @@ def index():
 @app.route('/insert', methods=['GET', 'POST'])
 def insert():
     if request.method == 'POST':
-        # Extract values from form (with default fallback)
+        # Extract values from form (for simplified CSV structure)
         quake_id = request.form.get('id')
-        time = safe_datetime(request.form.get('time'))
-        latitude = safe_float(request.form.get('latitude'))
-        longitude = safe_float(request.form.get('longitude'))
-        depth = safe_float(request.form.get('depth'))
+        time = safe_int(request.form.get('time'))  # Assuming time is an integer like in the CSV
+        latitude = safe_float(request.form.get('lat'))
+        longitude = safe_float(request.form.get('long'))
         mag = safe_float(request.form.get('mag'))
-        magType = request.form.get('magType')
         nst = safe_int(request.form.get('nst'))
-        gap = safe_float(request.form.get('gap'))
-        dmin = safe_float(request.form.get('dmin'))
-        rms = safe_float(request.form.get('rms'))
         net = request.form.get('net')
-        updated = safe_datetime(request.form.get('updated'))
-        place = request.form.get('place')
-        type_ = request.form.get('type')
-        horizontalError = safe_float(request.form.get('horizontalError'))
-        depthError = safe_float(request.form.get('depthError'))
-        magError = safe_float(request.form.get('magError'))
-        magNst = safe_int(request.form.get('magNst'))
-        status = request.form.get('status')
-        locationSource = request.form.get('locationSource')
-        magSource = request.form.get('magSource')
 
+        # Insert into Earthquakes table
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO Earthquakes (
-                id, time, latitude, longitude, depth, mag, magType, nst, gap, dmin, rms,
-                net, updated, place, type, horizontalError, depthError, magError,
-                magNst, status, locationSource, magSource
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, quake_id, time, latitude, longitude, depth, mag, magType, nst, gap, dmin, rms,
-             net, updated, place, type_, horizontalError, depthError, magError,
-             magNst, status, locationSource, magSource)
+        try:
+            cursor.execute("""
+                INSERT INTO Earthquakes (
+                    id, time, latitude, longitude, mag, nst, net
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, quake_id, time, latitude, longitude, mag, nst, net)
+            conn.commit()
+            flash('Earthquake record inserted successfully!')
+        except Exception as e:
+            flash(f'Insert failed: {e}')
+        finally:
+            cursor.close()
+            conn.close()
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-        flash('Earthquake record inserted successfully!')
         return redirect(url_for('index'))
-    
+
     return render_template('insert.html')
+
 
 @app.route('/query', methods=['GET', 'POST'])
 def query():
@@ -143,37 +130,16 @@ def query():
 @app.route('/query2', methods=['GET', 'POST'])
 def query2():
     if request.method == 'POST':
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        min_mag = request.form.get('min_mag', 0)
-        max_mag = request.form.get('max_mag', 10)
-
-        conn = get_connection()
-        query = """
-            SELECT id, time, latitude, longitude, mag, nst, net
-            FROM Earthquakes
-            WHERE mag BETWEEN ? AND ?
-              AND time BETWEEN ? AND ?
-            ORDER BY time DESC
-        """
-        df = pd.read_sql(query, conn, params=[min_mag, max_mag, start_date, end_date])
-        conn.close()
-
-        html_table = df.to_html(classes='table table-striped', index=False).replace('\n', '')
-        return render_template('results.html', tables=[html_table], titles=df.columns.values)
-
-    return render_template('query2.html')
-
-@app.route('/query3', methods=['GET', 'POST'])
-def query3():
-    if request.method == 'POST':
         try:
-            center_lat = float(request.form.get('latitude'))
-            center_lon = float(request.form.get('longitude'))
-            radius_km = float(request.form.get('distance_km'))
+            start_time_val = safe_int(request.form.get('start_time'))
+            end_time_val = safe_int(request.form.get('end_time'))
 
-            # Create Redis cache key
-            cache_key = hashlib.sha256(f"{center_lat}_{center_lon}_{radius_km}".encode()).hexdigest()
+            if start_time_val is None or end_time_val is None:
+                flash("Please provide valid numeric time values.")
+                return redirect(url_for('query2'))
+
+            # Create cache key
+            cache_key = hashlib.sha256(f"{start_time_val}_{end_time_val}".encode()).hexdigest()
 
             start_time = time.time()
             cached_result = redis_client.get(cache_key)
@@ -186,27 +152,64 @@ def query3():
             else:
                 cache_status = "CACHE MISS"
                 print(cache_status)
-                # Approximate conversions
-                delta_lat = radius_km / 111  # 1 deg latitude ≈ 111 km
-                delta_lon = radius_km / (111 * abs(math.cos(math.radians(center_lat))) + 1e-6)  # avoid div by zero
-
-                min_lat = center_lat - delta_lat
-                max_lat = center_lat + delta_lat
-                min_lon = center_lon - delta_lon
-                max_lon = center_lon + delta_lon
-
                 conn = get_connection()
                 query = """
-                    SELECT id, time, latitude, longitude, mag, nst, net
+                    SELECT id, net, time, latitude, longitude
                     FROM Earthquakes
-                    WHERE latitude BETWEEN ? AND ?
-                    AND longitude BETWEEN ? AND ?
+                    WHERE time BETWEEN ? AND ?
                     ORDER BY time DESC
                 """
-                df = pd.read_sql(query, conn, params=[min_lat, max_lat, min_lon, max_lon])
+                df = pd.read_sql(query, conn, params=[start_time_val, end_time_val])
                 conn.close()
+                redis_client.setex(cache_key, 300, df.to_json().encode())
+                elapsed_time = time.time() - start_time
 
-                # Cache for 5 minutes
+            html_table = df.to_html(classes='table table-striped', index=False).replace('\n', '')
+            return render_template('results.html', tables=[html_table], titles=df.columns.values,
+                                   elapsed_time=f"{elapsed_time:.4f} seconds", cache_status=cache_status)
+
+        except Exception as e:
+            flash(f"Error: {e}")
+            return redirect(url_for('query2'))
+
+    return render_template('query2.html')
+
+
+@app.route('/query3', methods=['GET', 'POST'])
+def query3():
+    if request.method == 'POST':
+        try:
+            start_time_val = safe_int(request.form.get('start_time'))
+            net_val = request.form.get('net', '').strip().lower()
+            count = safe_int(request.form.get('count'))
+
+            if start_time_val is None or not net_val or count is None:
+                flash("Please provide valid start time, net value, and count.")
+                return redirect(url_for('query3'))
+
+            # Create Redis cache key
+            cache_key = hashlib.sha256(f"{start_time_val}_{net_val}_{count}".encode()).hexdigest()
+
+            start_time = time.time()
+            cached_result = redis_client.get(cache_key)
+
+            if cached_result:
+                df = pd.read_json(io.BytesIO(cached_result))
+                elapsed_time = time.time() - start_time
+                cache_status = "CACHE HIT"
+                print(cache_status)
+            else:
+                cache_status = "CACHE MISS"
+                print(cache_status)
+                conn = get_connection()
+                query = """
+                    SELECT TOP (?) id, net, time, latitude, longitude
+                    FROM Earthquakes
+                    WHERE time >= ? AND LOWER(net) = ?
+                    ORDER BY time ASC
+                """
+                df = pd.read_sql(query, conn, params=[count, start_time_val, net_val])
+                conn.close()
                 redis_client.setex(cache_key, 300, df.to_json().encode())
                 elapsed_time = time.time() - start_time
 
@@ -219,6 +222,222 @@ def query3():
             return redirect(url_for('query3'))
 
     return render_template('query3.html')
+
+@app.route('/query4', methods=['GET', 'POST'])
+def query4():
+    if request.method == 'POST':
+        try:
+            t = safe_int(request.form.get('t'))
+            q2_start = safe_int(request.form.get('q2_start'))
+            q2_end = safe_int(request.form.get('q2_end'))
+
+            q3_start = safe_int(request.form.get('q3_start'))
+            q3_net = request.form.get('q3_net', '').strip().lower()
+            q3_count = safe_int(request.form.get('q3_count'))
+
+            if None in [t, q2_start, q2_end, q3_start, q3_count] or not q3_net:
+                flash("Please enter all required values.")
+                return redirect(url_for('query4'))
+
+            q2_times = []
+            q3_times = []
+            last_q2_df = None
+            last_q3_df = None
+
+            conn = get_connection()
+
+            for _ in range(t):
+                start = time.time()
+                q2_query = """
+                    SELECT id, net, time, latitude, longitude
+                    FROM Earthquakes
+                    WHERE time BETWEEN ? AND ?
+                    ORDER BY time DESC
+                """
+                last_q2_df = pd.read_sql(q2_query, conn, params=[q2_start, q2_end])
+                q2_times.append(time.time() - start)
+
+                start = time.time()
+                q3_query = """
+                    SELECT TOP (?) id, net, time, latitude, longitude
+                    FROM Earthquakes
+                    WHERE time >= ? AND LOWER(net) = ?
+                    ORDER BY time ASC
+                """
+                last_q3_df = pd.read_sql(q3_query, conn, params=[q3_count, q3_start, q3_net])
+                q3_times.append(time.time() - start)
+
+            conn.close()
+
+            q2_total = sum(q2_times)
+            q3_total = sum(q3_times)
+
+            # Convert dataframes to HTML tables
+            q2_table = last_q2_df.to_html(classes='table table-striped', index=False).replace('\n', '') if last_q2_df is not None else ""
+            q3_table = last_q3_df.to_html(classes='table table-striped', index=False).replace('\n', '') if last_q3_df is not None else ""
+
+            return render_template("query4_results.html",
+                                   t=t,
+                                   q2_times=q2_times,
+                                   q3_times=q3_times,
+                                   q2_total=q2_total,
+                                   q3_total=q3_total,
+                                   q2_table=q2_table,
+                                   q3_table=q3_table)
+
+        except Exception as e:
+            flash(f"Error: {e}")
+            return redirect(url_for('query4'))
+
+    return render_template('query4.html')
+
+@app.route('/query5', methods=['GET', 'POST'])
+def query5():
+    if request.method == 'POST':
+        try:
+            t = safe_int(request.form.get('t'))
+            q2_start = safe_int(request.form.get('q2_start'))
+            q2_end = safe_int(request.form.get('q2_end'))
+
+            q3_start = safe_int(request.form.get('q3_start'))
+            q3_net = request.form.get('q3_net', '').strip().lower()
+            q3_count = safe_int(request.form.get('q3_count'))
+
+            if None in [t, q2_start, q2_end, q3_start, q3_count] or not q3_net:
+                flash("Please enter all required values.")
+                return redirect(url_for('query5'))
+
+            q2_times, q3_times = [], []
+            q2_hits, q2_misses = 0, 0
+            q3_hits, q3_misses = 0, 0
+            last_q2_df, last_q3_df = None, None
+
+            for _ in range(t):
+                # --- QUERY 2 ---
+                q2_key = hashlib.sha256(f"q2_{q2_start}_{q2_end}".encode()).hexdigest()
+                start = time.time()
+                cached_q2 = redis_client.get(q2_key)
+
+                if cached_q2:
+                    last_q2_df = pd.read_json(io.BytesIO(cached_q2))
+                    q2_hits += 1
+                else:
+                    conn = get_connection()
+                    query = """
+                        SELECT id, net, time, latitude, longitude
+                        FROM Earthquakes
+                        WHERE time BETWEEN ? AND ?
+                        ORDER BY time DESC
+                    """
+                    last_q2_df = pd.read_sql(query, conn, params=[q2_start, q2_end])
+                    conn.close()
+                    redis_client.setex(q2_key, 300, last_q2_df.to_json().encode())
+                    q2_misses += 1
+                q2_times.append(time.time() - start)
+
+                # --- QUERY 3 ---
+                q3_key = hashlib.sha256(f"q3_{q3_start}_{q3_net}_{q3_count}".encode()).hexdigest()
+                start = time.time()
+                cached_q3 = redis_client.get(q3_key)
+
+                if cached_q3:
+                    last_q3_df = pd.read_json(io.BytesIO(cached_q3))
+                    q3_hits += 1
+                else:
+                    conn = get_connection()
+                    query = """
+                        SELECT TOP (?) id, net, time, latitude, longitude
+                        FROM Earthquakes
+                        WHERE time >= ? AND LOWER(net) = ?
+                        ORDER BY time ASC
+                    """
+                    last_q3_df = pd.read_sql(query, conn, params=[q3_count, q3_start, q3_net])
+                    conn.close()
+                    redis_client.setex(q3_key, 300, last_q3_df.to_json().encode())
+                    q3_misses += 1
+                q3_times.append(time.time() - start)
+
+            q2_total = sum(q2_times)
+            q3_total = sum(q3_times)
+
+            return render_template("query5_results.html",
+                                   t=t,
+                                   q2_times=q2_times,
+                                   q3_times=q3_times,
+                                   q2_total=q2_total,
+                                   q3_total=q3_total,
+                                   q2_hits=q2_hits,
+                                   q2_misses=q2_misses,
+                                   q3_hits=q3_hits,
+                                   q3_misses=q3_misses,
+                                   q2_table=last_q2_df.to_html(classes='table table-striped', index=False).replace('\n', '') if last_q2_df is not None else "",
+                                   q3_table=last_q3_df.to_html(classes='table table-striped', index=False).replace('\n', '') if last_q3_df is not None else "")
+
+        except Exception as e:
+            flash(f"Error: {e}")
+            return redirect(url_for('query5'))
+
+    return render_template('query5.html')
+
+@app.route('/query6', methods=['GET', 'POST'])
+def query6():
+    if request.method == 'POST':
+        try:
+            old_time = safe_int(request.form.get('old_time'))
+            if old_time is None:
+                flash("Please enter a valid existing time value.")
+                return redirect(url_for('query6'))
+
+            # Collect new values
+            update_fields = {
+                'time': safe_int(request.form.get('new_time')),
+                'latitude': safe_float(request.form.get('lat')),
+                'longitude': safe_float(request.form.get('long')),
+                'mag': safe_float(request.form.get('mag')),
+                'nst': safe_int(request.form.get('nst')),
+                'net': request.form.get('net', '').strip() or None,
+                'id': request.form.get('id', '').strip() or None
+            }
+
+            update_fields = {k: v for k, v in update_fields.items() if v is not None and v != ''}
+
+            if not update_fields:
+                flash("No new values provided for update.")
+                return redirect(url_for('query6'))
+
+            # Build SQL update statement
+            set_clause = ", ".join([f"{field} = ?" for field in update_fields])
+            values = list(update_fields.values()) + [old_time]
+
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute(f"UPDATE Earthquakes SET {set_clause} WHERE time = ?", values)
+            conn.commit()
+            affected = cursor.rowcount
+
+            updated_df = None
+            if affected > 0:
+                # Fetch the updated record (use new time if it was changed)
+                final_time = update_fields.get('time', old_time)
+                updated_df = pd.read_sql("SELECT * FROM Earthquakes WHERE time = ?", conn, params=[final_time])
+
+            cursor.close()
+            conn.close()
+
+            if affected == 0:
+                flash("No records found with the provided time.")
+                return redirect(url_for('query6'))
+            else:
+                flash(f"{affected} record(s) updated successfully.")
+                updated_table = updated_df.to_html(classes='table table-striped', index=False).replace('\n', '')
+                return render_template("query6.html", updated_table=updated_table)
+
+        except Exception as e:
+            flash(f"Error: {e}")
+            return redirect(url_for('query6'))
+
+    return render_template("query6.html")
+
 
 
 @app.route('/upload', methods=['GET', 'POST'])

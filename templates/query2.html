@@ -1,30 +1,19 @@
-{% extends "layout.html" %}
-{% block content %}
-<h2 class="text-center">Query Earthquakes by Date and Magnitude</h2>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Query Earthquakes by Time Range</title>
+</head>
+<body>
+    <h2>Query Earthquakes by Time Range</h2>
+    <form method="POST">
+        <label for="start_time">Start Time:</label>
+        <input type="text" name="start_time" required><br><br>
 
-<form method="post" class="row g-3 mt-4">
-  <div class="col-md-6">
-    <label>Start Date</label>
-    <input type="date" name="start_date" class="form-control" required>
-  </div>
-  <div class="col-md-6">
-    <label>End Date</label>
-    <input type="date" name="end_date" class="form-control" required>
-  </div>
+        <label for="end_time">End Time:</label>
+        <input type="text" name="end_time" required><br><br>
 
-  <div class="col-md-6">
-    <label>Minimum Magnitude</label>
-    <input type="number" step="0.1" name="min_mag" class="form-control" value="0">
-  </div>
-  <div class="col-md-6">
-    <label>Maximum Magnitude</label>
-    <input type="number" step="0.1" name="max_mag" class="form-control" value="10">
-  </div>
-
-  <div class="col-12 text-center">
-    <button type="submit" class="btn btn-success mt-3">Query</button><br>
-    <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
-  </div>
-</form>
-{% endblock %}
-
+        <input type="submit" value="Query">
+    </form>
+</body>
+</html>

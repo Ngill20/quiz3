@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="text-center">Query4: Repeat SQL Queries T Times</h2>
+
+<form method="POST" class="text-center">
+    <label for="t">Number of times (T) to repeat both queries:</label><br>
+    <input type="text" name="t" required><br><br>
+
+    <h4>Query2 - Time Range</h4>
+    <label for="q2_start">Start Time:</label><br>
+    <input type="text" name="q2_start" required><br><br>
+    <label for="q2_end">End Time:</label><br>
+    <input type="text" name="q2_end" required><br><br>
+
+    <h4>Query3 - Net + Start Time + Count</h4>
+    <label for="q3_start">Start Time:</label><br>
+    <input type="text" name="q3_start" required><br><br>
+    <label for="q3_net">Net Value:</label><br>
+    <input type="text" name="q3_net" required><br><br>
+    <label for="q3_count">Count:</label><br>
+    <input type="text" name="q3_count" required><br><br>
+
+    <input type="submit" value="Run Query 4" class="btn btn-primary">
+</form>
+{% endblock %}
